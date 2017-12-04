@@ -1,0 +1,7 @@
+[Parson_data]
+job = None
+safe = Enable
+doubt = 0
+protect = Disable
+unsafe_count = 0
+

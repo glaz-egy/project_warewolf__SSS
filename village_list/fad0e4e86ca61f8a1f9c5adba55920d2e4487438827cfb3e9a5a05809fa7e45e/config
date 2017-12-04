@@ -1,0 +1,34 @@
+[jobs]
+villager = Enable
+prophet = Enable
+guardian = Disable
+psychic = Disable
+pair = Disable
+wizard = Disable
+warewolf = Enable
+madman = Disable
+ghost = Disable
+possessor = Disable
+physics = Enable
+norht = Enable
+
+[mode]
+game_mode = Nomal
+wolf_flag = False
+prophet_flag = False
+
+[num_of_job]
+player = 7
+villager = None
+prophet = None
+guardian = None
+psychic = None
+pair = None
+wizard = None
+warewolf = None
+madman = None
+ghost = None
+possessor = None
+physics = None
+norht = None
+

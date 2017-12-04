@@ -45,18 +45,18 @@ default_config['num_of_job'] = {'Player':'None',
 								'Physics':'None',
 								'Norht':'None'}
 
-job_jp =  {'villager':'村人',
-			'prophet':'占い師',
-			'guardian':'守護者',
-			'psychic':'霊能者',
-			'pair':'協同者',
-			'wizard':'魔術師',
-			'warewolf':'人狼',
-			'madman':'狂人',
-			'ghost':'妖魔',
-			'possessor':'憑依者',
-			'Physics':'シノセン',
-			'Norht':'北の国から'}
+job_jp =  {'vi':'村人',
+			'pr':'占い師',
+			'gu':'守護者',
+			'ps':'霊能者',
+			'pa':'協同者',
+			'wi':'魔術師',
+			'wa':'人狼',
+			'ma':'狂人',
+			'gh':'妖魔',
+			'po':'憑依者',
+			'ph':'シノセン',
+			'no':'北の国から'}
 
 job_code = {'vi':'villager',
 			'pr':'prophet',
@@ -84,9 +84,9 @@ wolf_or_human = {'vi':'human',
 				'ph':'human',
 				'no':'the forth'}
 
-job_keys = ('vi','pr','gu','ps','pa','wi','wa','ma','gh','po')
-fix_job = ('pr','gu','ps','pa','wi','ma','gh','po')
-non_night_job_f = ('vi','gu','ps','pa','wi','ma','gh','po')
+job_keys = ('vi','pr','gu','ps','pa','wi','wa','ma','gh','po','no','ph')
+fix_job = ('pr','gu','ps','pa','wi','ma','gh','po','no','ph')
+non_night_job_f = ('vi','gu','ps','pa','wi','ma','gh','po','no','ph')
 non_night_job = ('vi','pa','wi','ma','gh')
 
 # メインクラス
@@ -112,14 +112,18 @@ class Warewolf:
 		# 勝利者リスト
 		self.player_dict = {}
 		# name:job
-		self.job_nums = {}
+		self.job_nums = {'human':0,'warewolf':0,'the third':0,'the forth':0}
 		# job:num
 		self.cont_flag = False
 		self.ghost_dead_flag = False
-		self.north_player_flag = False
+		self.atom_flag = False
+		self.pet_flag = False
 		self.poss_player_flag = False
 		self.ghost_player_flag = False
 		# 特殊勝利ジョブ用フラグ
+		self.north_player_flag = False
+		self.north_fire_flag = False
+		self.pet_fire_flag = False
 		count = 1
 		# 日数管理
 		player_num = len(player_data)
@@ -130,18 +134,19 @@ class Warewolf:
 				self.change_file(player_data[player_name[x]],player_name[x],'Parson_data','doubt','0')
 				self.change_file(player_data[player_name[x]],player_name[x],'Parson_data','kill_count','0')
 				self.change_file(player_data[player_name[x]],player_name[x],'Parson_data','safe','Enable')
-		print("Now config is")
+		print(" 今の設定は")
 		for data in job_keys:
-			print('	',job_jp[job_code[data]],'->',\
+			print('	',job_jp[data],'->',\
 			config['jobs'][job_code[data]])
 			if config['jobs'][job_code[data]] == 'Enable':
 				use_jobs.append(data)
-		print("\n Change job setting.\n")
+		print(" です。")
+		print("\n 役職の設定を変えます。\n")
 		for key in job_keys:
-			print('	',job_jp[job_code[key]],':',key)
-		print(" \n[Enable:+,Disable:-,and:&]")
-		print(" \nEx)+gu&-pr")
-		print(" \nNo Change job setting is only +-\n")
+			print('	',job_jp[key],':',key)
+		print(" \n [Enable:+,Disable:-,and:&]")
+		print(" \n 例)+gu&-pr")
+		print(" \n 変更しない場合は +- を入力してください。\n")
 		en_dis = list(map(str,input().split('&')))
 		while(err):
 			err = False
@@ -176,9 +181,9 @@ class Warewolf:
 								self.change_file(config,'config','jobs',job_code[temp_code],'Enable')
 								use_jobs.append(temp_code)
 							except:
-								print(" There is no job:{}".format(temp_code))
+								print(" この役職は存在しません:{}".format(temp_code))
 						if int(len(use_jobs)) > player_num:
-							print("Work is beyond players")
+							print(" 人数を超えています。")
 							for code_in in en_dis:
 								if code_in[1:3] in use_jobs:
 									self.change_file(config,'config','jobs',job_code[code_in[1:3]],'Disable')
@@ -213,7 +218,7 @@ class Warewolf:
 								use_jobs.remove(temp_code)
 							except:
 								print(" There is no job:{}".format(temp_code))
-		print(" Job members setting")
+		print(" 役職の人数を設定します。")
 		last = player_num
 		for noset in use_jobs:
 			if noset in fix_job:
@@ -222,37 +227,39 @@ class Warewolf:
 					last -= 1
 		for job in use_jobs:
 			if not job in fix_job:
-				print(" The remaining players:{}".format(last))
-				print(" How many {} members? ::".format(job_code[job]),end = ' ')
+				print(" 残りの人数:{}".format(last))
+				print(" {}は何人に設定しますか？ ::".format(job_jp[job]),end = ' ')
 				err_flag = True
 				while err_flag:
 					try:
 						num = int(input())
 						err_flag = False
 					except:
-						num = input(" You need type number.\n Type agein!>")
+						print(" 数字を入力する必要があります。\n 再度入力してください>",end = ' ')
 				err_flag = True
 				while err_flag:
 					if num <= last:
-						self.job_nums[wolf_or_human[job]] = num
+						self.job_nums[wolf_or_human[job]] += num
 						last -= num
 						err_flag = False
 					else:
 						err_flag2 = True
 						while err_flag2:
 							try:
-								num = input(" Number is over.\n Type agein!>")
+								num = int(input(" 数を超えています。\n 再度入力してください>"))
 								err_flag2 = False
 							except:
-								num = input(" You need type number.\n Type agein!>")
+								print(" 数字を入力する必要があります。\n 再度入力してください>",end = ' ')
+								num = int(input())
 				for x in range(num):
 					job_num.append(job)
 			elif job in fix_job:
 				job_num.append(job)
-				self.job_nums[wolf_or_human[job]] = 1
-				if use_jobs.count('pa') == 1 and use_jobs.count('pa') != 2:
-					self.job_nums[job_code[job]] = 2
-					job_num.append(job)
+				self.job_nums[wolf_or_human[job]] += 1
+				if job == 'pa':
+					self.job_nums[job_code[job]] += 2
+					if use_jobs.count('pa') == 1 and use_jobs.count('pa') != 2:
+						job_num.append(job)
 		for x in range(len(player_data)):
 			self.player_dict[player_name[x]] = random.choice(job_num)
 			self.change_file(player_data[player_name[x]],player_name[x],'Parson_data'\
@@ -264,7 +271,7 @@ class Warewolf:
 				self.ph_player = player_name[x]
 			if self.player_dict[player_name[x]] == 'gh':
 				self.ghost_player = player_name[x]
-		mode_flag = input(" Fast night kill Enable? (Y/N) :")
+		mode_flag = input(" 初夜での殺害を有効にしますか？ (Y/N) :")
 		flag  = True
 		while(flag):
 			if mode_flag.upper() == 'Y':
@@ -276,8 +283,8 @@ class Warewolf:
 				self.wolf_flag = False
 				flag = False
 			else:
-				mode_flag = input(" Type agein!>")
-		mode_flag = input(" Fast night prophecy Enable? (Y/N) :")
+				mode_flag = input(" 再度入力してください>")
+		mode_flag = input(" 初夜での占いを有効にしますか？ (Y/N) :")
 		flag  = True
 		while(flag):
 			if mode_flag.upper() == 'Y':
@@ -289,41 +296,40 @@ class Warewolf:
 				self.prophet_flag = False
 				flag = False
 			else:
-				mode_flag = input(" Type agein!>")
+				mode_flag = input(" 再度入力してください>")
 		os.system('cls')
-		print(" Let's Game START!")
+		print(" この村には人間以外が住んでいます。すでに数人の村人が彼らの手によって殺されました。\n 村人に化けた彼らを見つけ出し、村を平和に導いてください。")
 		for num in range(len(self.player_dict)):
 			self.check_player(player_name[num])
-			print(" You job is {}."\
-			.format(job_code[self.player_dict[player_name[num]]]))
+			print(" あなたの役職は{}です。"\
+			.format(job_jp[self.player_dict[player_name[num]]]))
 			if self.player_dict[player_name[num]] in {'wa','pa'}:
 				for num2 in range(len(self.player_dict)):
 					if self.player_dict[player_name[num]] == self.player_dict[player_name[num2]]:
 						if player_name[num] != player_name[num2]:
-							print(" Your companion is {}."\
+							print(" あなたの仲間は{}です。"\
 							.format(player_name[num2]))
 			self.night_part(player_data,player_name[num],player_name,config,count)
-			temp = input(" Are you OK?")
+			temp = input(" 次へ")
 			os.system('cls')
 		if len(self.killing_list) != 0:
 			for name in self.kill_list:
 				del self.player_dict[name]
 				del player_data[name]
 				player_name.remove(name)
-			self.killing_list.clear()
-			loop_flag = self.end_check(player_data)
-			if not loop_flag:
-				self.noon_part(config,player_data,count)
-		else:
-			loop_flag = True
+		loop_flag = True
 		while loop_flag:
-			self.noon_part(config,player_data,count)
+			loop_flag = self.end_check(player_data)
+			self.noon_part(config,player_data,loop_flag,count)
 			self.ghost_check()
-			input(" Start talking.")
+			self.killing_list.clear()
+			if not loop_flag:
+				break
+			input(" 話し合いを開始してください。")
 			limit = 3
 			while limit >= 0:
 				if limit == 0:
-					print(" Time Limit!")
+					print(" 時間制限です。")
 				else:
 					print(" {0}m{1}s".format((limit//60),(limit%60)))
 				limit -= 1
@@ -341,7 +347,7 @@ class Warewolf:
 					os.system('cls')
 					self.check_player(player_name[num])
 					if player_name[num] in self.dead_list:
-						yes_or_no = input(" Do you want to see all job?(Y/N)>")
+						yes_or_no = input(" 全ての人の役職を見ますか？(Y/N)>")
 						loop = True
 						while loop:
 							if yes_or_no.upper() == 'Y':
@@ -352,22 +358,23 @@ class Warewolf:
 							elif yes_or_no.upper() == 'N':
 								loop = False
 							else:
-								yes_or_no = input(" Type agein!:")
+								yes_or_no = input(" もう一度入力してください:")
 					else:
 						self.night_part(player_data,player_name[num],player_name,config,count)
-					temp = input(" Are you OK?")
+					temp = input(" 次へ")
 			for name in self.kill_list:
 				del self.player_dict[name]
 				del player_data[name]
 				player_name.remove(name)
 			self.killing_list.clear()
 			loop_flag = self.end_check(player_data)
-		print(" Winner list is")
+		print(" 勝者は",end='')
 		if len(self.winner) == 0:
-			print(" No winner")
+			print(" いませんでした。")
 		else:
 			for name in self.winner:
-				print("	{}".format(name))
+				print("{}さん、".format(name),end='')
+			print(" です。")
 
 	# ファイルデータ読み出しメソッド
 	def open_file(self,file_name):
@@ -388,16 +395,16 @@ class Warewolf:
 
 	# プレイヤーチェックメソッド
 	def check_player(self,player_name):
-		if input(" Are you {} ?(Y/N) : ".format(player_name)) in {'Y','y'}:
+		if input(" あなたは{}ですか？(Y/N) : ".format(player_name)) in {'Y','y'}:
 			pass
 		else:
-			print(" Type agein!")
+			print(" 再度入力してください。")
 			self.check_player(player_name)
 
 	# 生存プレイヤー表示メソッド
 	def print_player_list(self,player_data,name,names):
 		list_name = []
-		print(" List excluding you.\n")
+		print(" あなたを除いて現在生存している人たちは\n")
 		for x in range(len(names)):
 			if names[x] != name:
 				if not names[x] in self.kill_list and not names[x] in self.dead_list:
@@ -412,18 +419,19 @@ class Warewolf:
 					else:
 						print("	{}".format(names[x]))
 						list_name.append(names[x])
+		print(" です。")
 		print("")
 		return list_name
 
 	# 審議メソッド
 	def doubt_part(self,data_list,name,names):
 		list_name = self.print_player_list(data_list,name,names)
-		doubt_name = input(" Who doubt?> ")
+		doubt_name = input(" 誰が怪しいですか？> ")
 		keep = False
 		if not doubt_name in list_name or doubt_name == name:
 			keep = True
 		while(keep):
-			doubt_name = input(" Type agein!>")
+			doubt_name = input(" もう一度入力してください>")
 			if doubt_name in list_name and doubt_name != name:
 				keep = False
 		self.change_file(data_list[doubt_name],doubt_name\
@@ -439,7 +447,7 @@ class Warewolf:
 			while loop:
 				if True:
 					list_name = self.print_player_list(data_list,name,names)
-					player_check_job = input(" Whose job would you like to check?>")
+					player_check_job = input(" 誰の役職を確認しますか？>")
 					check = True
 					while(check):
 						if player_check_job in list_name:
@@ -452,7 +460,7 @@ class Warewolf:
 								self.ghost_dead_flag = True
 							check = False
 						else:
-							player_check_job = input(" Type agein!>")
+							player_check_job = input(" もう一度入力してください>")
 					loop = False
 				#elif yes_or_no.upper() == 'N':
 					#loop = False
@@ -467,17 +475,19 @@ class Warewolf:
 		if config['mode'].getboolean('wolf_flag') or count != 1:
 			check = True
 			list_name = self.print_player_list(data_list,name,names)
-			if not self.killing_list == ['']:
-				print(" Who will you kill?\n Your partner choice is")
+			if len(self.killing_list) != 0:
+				print(" 誰を殺しますか？\n あなたの仲間が選んだのは")
 				for x in range(len(self.killing_list)):
 					print("	{}".format(self.killing_list[x]))
-			kill_player = input(" What is the name of the person you want to kill?>")
+				print(" です。")
+			kill_player = input(" 殺したい人の名前を入力してください>")
 			while(check):
 				if kill_player in list_name:
 					self.killing_list.append(kill_player)
 					check = False
 				else:
-					kill_player = input(" Type agein!>")
+					kill_player = input(" もう一度入力してください>")
+			print(self.killing_list)
 		else:
 			self.doubt_part(data_list,name,names)
 
@@ -564,28 +574,27 @@ class Warewolf:
 				self.wolf_part(data_list,name,names,config,count)
 			elif data_list[name]['Parson_data']['job'] == 'po':
 				self.possessor_part()
+			elif data_list[name]['Parson_data']['job'] == 'no':
+				self.north_part(data_list,name,names)
 
 	# 夜明け時表示項目メソッド
-	def noon_part(self,config,data_list,count):
-		if str(count)[-1] == '1':
-			print(" The 1st night fear was over.")
-		elif str(count)[-1] == '2':
-			print(" The 2nd night fear was over.")
-		elif str(count)[-1] == '3':
-			print(" The 3rd night fear was over.")
-		else:
-			print(" The {}th night fear was over.".format(count))
+	def noon_part(self,config,data_list,loop_flag,count):
+		print(" 恐怖の第{}夜が明けました。".format(count))
 		if config['mode'].getboolean('wolf_flag'):
 			self.kill_check(data_list,count)
 		else:
-			print(" There was no victim last night.")
-		self.doubt_check()
+			print(" 昨夜の被害者はいませんでした。")
+		if loop_flag:
+			self.doubt_check()
 
 	# 人狼殺害判定メソッド
 	def kill_check(self,data_list,count):
 		kill_dict = collections.Counter(self.killing_list)
+		print(self.killing_list)
+		temp_name = []
+		temp_num = []
 		if len(kill_dict) == 1:
-			print(" The victim of last night is '{}'.".format(self.killing_list[0]))
+			print(" {}さんが無惨な姿で発見されました。".format(self.killing_list[0]))
 			temp_kill = self.killing_list[0]
 			self.kill_list.append(temp_kill)
 			self.job_nums[wolf_or_human[data_list[self.killing_list[0]]['Parson_data']['job']]] -= 1
@@ -593,22 +602,20 @@ class Warewolf:
 			,'Parson_data','safe','Disable')
 			self.change_file(data_list[self.killing_list[0]],self.killing_list[0]\
 			,'Parson_data','unsafe_count',str(count))
+		elif len(kill_dict) < 1:
+			for name,x in kill_dict.most_common(2):
+				temp_num.append(x)
+				temp_name.append(name)
+			if temp_num[0] == temp_num[1]:
+				print(" 昨夜の被害者はいませんでした。")
+			else:
+				print(" {}さんが無惨な姿で発見されました。".format(temp_name[0]))
+				self.kill_list.append(temp_name[0])
+				self.job_nums[wolf_or_human[data_list[temp_name[0]]['Parson_data']['job']]] -= 1
+				self.change_file(data_list[temp_name[0]],temp_name[0],'Parson_data','safe','Disable')
+				self.change_file(data_list[temp_name[0]],temp_name[0],'Parson_data','unsafe_count',str(count))
 		else:
-			temp_num = 0
-			for name,x in kill_dict.most_common(len(kill_dict)):
-				if temp_num == x:
-					print(" There was no victim last night.")
-					return
-				elif temp_num > x:
-					print(" The victim of last night is '{}'.".format(temp_name))
-					self.kill_list.append(temp_name)
-					self.job_nums[wolf_or_human[data_list[temp_name]['Parson_data']['job']]] -= 1
-					self.change_file(data_list[temp_name],temp_name,'Parson_data','safe','Disable')
-					self.change_file(data_list[temp_name],temp_name,'Parson_data','unsafe_count',str(count))
-					return
-				else:
-					temp_num = x
-					temp_name = name
+			print("Killing_list is blank.")
 
 	# 不審者判定メソッド
 	def doubt_check(self):
@@ -616,17 +623,17 @@ class Warewolf:
 		temp_num = []
 		fl = True
 		doubt_dict = collections.Counter(self.doubt_list)
-		if len(self.doubt_list) == 1:
-			print(" Doubted is '{}'.".format(self.doubt_list[0]))
+		if len(doubt_dict) == 1:
+			print(" 一番疑われているのは{}さんです。".format(self.doubt_list[0]))
 			fl = False
 			return
 		for name,x in doubt_dict.most_common(2):
 			temp_num.append(x)
 			temp_name.append(name)
 		if temp_num[0] == temp_num[1]:
-			print(" No one was doubted.")
+			print(" 現在疑われている人はいません")
 		else:
-			print(" Doubted is '{}'.".format(temp_name[0]))
+			print(" 一番疑われているのは{}さんです。".format(temp_name[0]))
 		self.doubt_list.clear()
 
 	# 妖魔出力判定メソッド
@@ -635,12 +642,36 @@ class Warewolf:
 			print(" And {} is dead.".format(self.ghost_player))
 
 	# 北の国から行動メソッド
-	def north_part(self):
-		pass
+	def north_part(self,data_list,name,names):
+		if not self.north_fire_flag:
+			fire = input(" 核ミサイルを発射できます。発射しますか？(Y/N)")
+			if fire.upper() == 'Y':
+				self.atom_flag = True
+				self.north_fire_flag
+				print(" ミサイルが発射されました。")
+				type_name = input(" 署名をお願いします")
+				while type_name != name:
+					type_name = input(" 自身の名前を入力してください")
+			elif fire.uppre() == 'N':
+				self.doubt_part(data_list,name,names)
+			else:
+				print(" 該当するものがありません。再度入力してください")
 
 	# シノセン行動メソッド
 	def physics_part(self):
-		pass
+		if not self.pet_fire_flag:
+			fire = input(" ペットボトルロケットを発射できます。発射しますか？(Y/N)")
+			if fire.upper() == 'Y':
+				self.pet_flag = True
+				self.pet_fire_flag = True
+				print(" ペットボトルロケットが発射されました。")
+				type_name = input(" 署名をお願いします")
+				while type_name != name:
+					type_name = input(" 自身の名前を入力してください")
+			elif fire.uppre() == 'N':
+				self.doubt_part(data_list,name,names)
+			else:
+				print(" 該当するものがありません。再度入力してください")
 
 	# パン屋行動メソッド
 	def bakery_part(self):
@@ -805,8 +836,8 @@ def open_player_file(name,village_hash):
 def del_player_file(player_name_list,player_data_list,del_file_name,village_hash):
 	for x in range(len(player_name_list)):
 		if player_name_list[x] == del_file_name:
-			player_name_list.remove(del_file_name)
-			del player_data_list[x]
+			del player_data_list[del_file_name]
+			del player_name_list[x]
 			os.remove(village_hash+'/'+del_file_name)
 			return 0
 
@@ -819,8 +850,8 @@ def write_config_file(village_hash,section,key,value):
 	temp_config.write(temp_config_file)
 	temp_config_file.close()
 
-print(" Are you login?")
-user_check = input(" Login is 'L'.Create New User is 'C'.Guest mode is 'G'>")
+print(" ログインしますか？")
+user_check = input(" ログインするなら'L'、新しくユーザーを作成するなら'C'、ゲストモードは'G'を入力してください>")
 while(1):
 	if user_check.upper() == 'L':
 		user = user.user_login()
@@ -832,13 +863,13 @@ while(1):
 		user = "guest"
 		break
 	else:
-		user_check = input(" Wrong input.Please type agein.>> ")
+		user_check = input(" 該当するものがありません。もう一度入力してください>> ")
 
-createvillage_check = input(" Create new village?(Y/N)> ")
+createvillage_check = input(" 新しく村を作りますか？(Y/N)> ")
 while(1):
 	if createvillage_check.upper() == 'Y':
 		cc = True
-		village_name = input(" Type Your New Village name: ")
+		village_name = input(" 村の名前を入力してください: ")
 		while(cc):
 			village_hash = "village_list/"+hashlib.sha256((village_name+user).encode('utf-8')).hexdigest()
 			if not path.exists(village_hash):
@@ -848,30 +879,30 @@ while(1):
 				config_file.close()
 				cc = False
 			else:
-				village_name = input(" This Village is being.Please type agein.:: ")
+				village_name = input(" その村はすでに存在します。再度入力してください:: ")
 		break
 	elif createvillage_check.upper() == 'N':
-		village_name = input(" Type Your Village name: ")
+		village_name = input(" 村の名前を入力してください: ")
 		cc = True
 		while(cc):
 			village_hash = "village_list/"+hashlib.sha256((village_name+user).encode('utf-8')).hexdigest()
 			if path.exists(village_hash):
 				cc = False
 			else:
-				village_name = input(" This Village is not being.Please type agein.:: ")
+				village_name = input(" その村は存在していません。再度入力してください:: ")
 		break
 	else:
-		createvillage_check = input(" Wrong input.Please type agein.>> ")
+		createvillage_check = input(" 該当するものがありません。もう一度入力してください>> ")
 
 if createvillage_check.upper() == 'Y':
 	player_name = []
 	player_data = {}
-	print("###"*3,"Name setting","###"*3)
-	member_num = int(input(" How many people?> "))
+	print("###"*3,"名前設定","###"*3)
+	member_num = int(input(" 何人ですか？> "))
 	for x in range(member_num):
-		temp_name = input(" Your name please: ")
+		temp_name = input(" 名前を入力してください: ")
 		while temp_name in player_name:
-			temp_name = input(" This Player is being.Please type agein.:: ")
+			temp_name = input(" その人物は存在します。再度入力してください:: ")
 		player_name.append(temp_name)
 		player_data[temp_name] = make_player_file(temp_name,village_hash)
 	write_config_file(village_hash,'num_of_job','Player',member_num)
@@ -883,60 +914,66 @@ if createvillage_check.upper() == 'N':
 	player_name = os.listdir(village_hash)
 	player_name.remove('config')
 	player_data = {}
-	print(" Now player is")
+	print(" 現在設定されている人は")
 	for name in player_name:
 		print('	'+name)
 		player_data[name] = make_player_file(name,village_hash)
 		member_num += 1
-	user_change = input(" Do you want to change the setting?(Y/N)> ")
+	print(" です。")
+	user_change = input(" 変更しますか？(Y/N)> ")
 	while(ccc):
 		if user_change.upper() == 'Y':
-			change_check = input(" UserAdd(A),UserNameChange(C),UserDelete(D): ")
+			change_check = input(" 人物追加(A),名前変更(C),人物削除(D): ")
 			while(end_flag):
 				cccc = True
 				while(cccc):
 					if change_check.upper() == 'A':
-						add_num = int(input(" How many add?: "))
+						try:
+							add_num = int(input(" 何人追加しますか？: "))
+						except:
+							print("数字を入力してください")
 						for x in range(add_num):
-							temp_name = input("Y our name please: ")
+							temp_name = input(" 名前を入力してください: ")
 							while temp_name in player_name:
-								temp_name = input(" This Player is being.Please type agein.:: ")
+								temp_name = input(" その人物は存在します。再度入力してください.:: ")
 							player_name.append(temp_name)
 							player_data[temp_name] = make_player_file(temp_name,village_hash)
 						cccc = False
 						member_num  += add_num
 					elif change_check.upper() == 'C':
-						del_file_name = input(" Change before User Name input: ")
+						del_file_name = input(" 変更前の名前を入力してください: ")
 						x = del_player_file(player_name,player_data,del_file_name,village_hash)
-						new_name = input("Your New name please:")
+						new_name = input(" 新しい名前を入力してください:")
 						while new_name in player_name:
-							new_name = input(" This Player is being.Please type agein.:: ")
+							new_name = input(" その人物はすでに存在します。再度入力してください:: ")
 						player_name.append(new_name)
 						player_data[new_name] = make_player_file(temp_name,village_hash)
 						cccc = False
 					elif change_check.upper() == 'D':
-						del_file_name = input(" Delete User Name input: ")
+						del_file_name = input(" 削除する人の名前を入力してください: ")
+						while not new_name in player_name:
+							new_name = input(" その人物は存在しません。再度入力してください:: ")
 						del_player_file(player_name,player_data,del_file_name,village_hash)
 						member_num -= 1
 						cccc = False
 					else:
-						change_check = input(" Wrong input.Please type agein.>> ")
-				more_change = input(" More Change?(Y/N)>")
+						change_check = input(" 該当するものがありません。再度入力してください>> ")
+				more_change = input(" 更に変更しますか？(Y/N)>")
 				ccccc = True
 				while(ccccc):
 					if more_change.upper() == 'Y':
-						change_check = input(" UserAdd(A),UserNameChange(C),UserDelete(D): ")
+						change_check = input(" 人物追加(A),名前変更(C),人物削除(D): ")
 						ccccc = False
 					elif more_change.upper() == 'N':
 						end_flag = False
 						ccccc = False
 					else:
-						more_change = input(" Wrong input.Please type agein.>> ")
+						more_change = input(" 該当するものがありません。再度入力してください>> ")
 			ccc = False
 		elif user_change.upper() == 'N':
 			ccc = False
 		else:
-			user_change = input(" Wrong input.Please type agein.>> ")
+			user_change = input(" 該当するものがありません。再度入力してください>> ")
 	write_config_file(village_hash,'num_of_job','Player',member_num)
 
 Warewolf(player_data,player_name,village_hash)
