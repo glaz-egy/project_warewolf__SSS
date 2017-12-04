@@ -305,7 +305,17 @@ class Warewolf:
 			self.night_part(player_data,player_name[num],player_name,config,count)
 			temp = input(" Are you OK?")
 			os.system('cls')
-		loop_flag = True
+		if len(self.killing_list) != 0:
+			for name in self.kill_list:
+				del self.player_dict[name]
+				del player_data[name]
+				player_name.remove(name)
+			self.killing_list.clear()
+			loop_flag = self.end_check(player_data)
+			if not loop_flag:
+				self.noon_part(config,player_data,count)
+		else:
+			loop_flag = True
 		while loop_flag:
 			self.noon_part(config,player_data,count)
 			self.ghost_check()
@@ -326,7 +336,7 @@ class Warewolf:
 				player_name.remove(name)
 			loop_flag = self.end_check(player_data)
 			count += 1
-			if not loop_flag:
+			if loop_flag:
 				for num in range(len(self.player_dict)):
 					os.system('cls')
 					self.check_player(player_name[num])
@@ -350,9 +360,8 @@ class Warewolf:
 				del self.player_dict[name]
 				del player_data[name]
 				player_name.remove(name)
-			self.kill_list.clear()
+			self.killing_list.clear()
 			loop_flag = self.end_check(player_data)
-		print(self.kill_list)
 		print(" Winner list is")
 		if len(self.winner) == 0:
 			print(" No winner")
@@ -408,14 +417,14 @@ class Warewolf:
 
 	# 審議メソッド
 	def doubt_part(self,data_list,name,names):
-		self.print_player_list(data_list,name,names)
+		list_name = self.print_player_list(data_list,name,names)
 		doubt_name = input(" Who doubt?> ")
 		keep = False
-		if not doubt_name in player_name or doubt_name == name:
+		if not doubt_name in list_name or doubt_name == name:
 			keep = True
 		while(keep):
 			doubt_name = input(" Type agein!>")
-			if doubt_name in player_name and doubt_name != name:
+			if doubt_name in list_name and doubt_name != name:
 				keep = False
 		self.change_file(data_list[doubt_name],doubt_name\
 		,'Parson_data','doubt'\
@@ -669,7 +678,7 @@ class Warewolf:
 						if judge_name in list_name:
 							loop = False
 					self.deth_list.append(judge_name)
-				input(" OK?")
+				input(" Next")
 			deth_dict = collections.Counter(self.deth_list)
 			if len(deth_dict) == 1:
 				self.dead_list.append(self.deth_list[0])
@@ -713,12 +722,12 @@ class Warewolf:
 						self.winner = self.ghost_player
 						return False
 					else:
-						self.winner = [name for name,job in self.player_dict.values() if wolf_or_human[job] == 'warewolf']
+						self.winner = [name for name in self.player_dict if wolf_or_human[self.player_dict[name]] == 'warewolf']
 						if self.poss_player_flag and self.dead_poss in self.winner and not self.poss_player_name in self.winner:
 							self.winner.appened(self.poss_player_name)
 						return False
 				elif self.job_nums['warewolf'] == 0:
-					self.winner = [name for name,job in self.player_dict.values() if wolf_or_human[job] == 'human']
+					self.winner = [name for name in self.player_dict if wolf_or_human[self.player_dict[name]] == 'human']
 					if self.poss_player_flag and self.dead_poss in self.winner and not self.poss_player_name in self.winner:
 						self.winner.appened(self.poss_player_name)
 					return False
@@ -735,12 +744,12 @@ class Warewolf:
 					print(" A nuclear missile was fired toward the village.\n The village has been destroyed.")
 					return False
 				elif self.job_nums['warewolf'] == self.job_nums['human']:
-					self.winner = [name for name,job in self.player_dict.values() if wolf_or_human[job] == 'warewolf']
+					self.winner = [name for name in self.player_dict if wolf_or_human[self.player_dict[name]] == 'warewolf']
 					if self.poss_player_flag and self.dead_poss in self.winner and not self.poss_player_name in self.winner:
 						self.winner.appened(self.poss_player_name)
 					return False
 				elif self.job_nums['warewolf'] == 0:
-					self.winner = [name for name,job in self.player_dict.values() if wolf_or_human[job] == 'human']
+					self.winner = [name for name in self.player_dict if wolf_or_human[self.player_dict[name]] == 'human']
 					if self.poss_player_flag and self.dead_poss in self.winner and not self.poss_player_name in self.winner:
 						self.winner.appened(self.poss_player_name)
 					return False
@@ -752,12 +761,12 @@ class Warewolf:
 					self.winner = self.ghost_player
 					return False
 				else:
-					self.winner = [name for name,job in self.player_dict.values() if wolf_or_human[job] == 'warewolf']
+					self.winner = [name for name in self.player_dict if wolf_or_human[self.player_dict[name]] == 'warewolf']
 					if self.poss_player_flag and self.dead_poss in self.winner and not self.poss_player_name in self.winner:
 						self.winner.appened(self.poss_player_name)
 					return Fasle
 			elif self.job_nums['warewolf'] == 0:
-				self.winner = [name for name,job in self.player_dict.values() if wolf_or_human[job] == 'human']
+				self.winner = [name for name in self.player_dict if wolf_or_human[self.player_dict[name]] == 'human']
 				if self.poss_player_flag and self.dead_poss in self.winner and not self.poss_player_name in self.winner:
 					self.winner.appened(self.poss_player_name)
 				return False
@@ -765,12 +774,12 @@ class Warewolf:
 				return True
 		else:
 			if self.job_nums['warewolf'] >= self.job_nums['human']:
-				self.winner = [name for name,job in self.player_dict.values() if wolf_or_human[job] == 'warewolf']
+				self.winner = [name for name in self.player_dict if wolf_or_human[self.player_dict[name]] == 'warewolf']
 				if self.poss_player_flag and self.dead_poss in self.winner and not self.poss_player_name in self.winner:
 					self.winner.appened(self.poss_player_name)
 				return False
 			elif self.job_nums['warewolf'] == 0:
-				self.winner = [name for name,job in self.player_dict.values() if wolf_or_human[job] == 'human']
+				self.winner = [name for name in self.player_dict if wolf_or_human[self.player_dict[name]] == 'human']
 				if self.poss_player_flag and self.dead_poss in self.winner and not self.poss_player_name in self.winner:
 					self.winner.appened(self.poss_player_name)
 				return False
