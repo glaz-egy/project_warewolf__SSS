@@ -1,8 +1,0 @@
-[Parson_data]
-job = wa
-safe = Disable
-doubt = 4
-protect = Disable
-unsafe_count = 0
-kill_count = 1
-

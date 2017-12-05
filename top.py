@@ -56,7 +56,8 @@ job_jp =  {'vi':'村人',
 			'gh':'妖魔',
 			'po':'憑依者',
 			'ph':'シノセン',
-			'no':'北の国から'}
+			'no':'北の国から',
+			'ba':'パン屋さん'}
 
 job_code = {'vi':'villager',
 			'pr':'prophet',
@@ -69,7 +70,8 @@ job_code = {'vi':'villager',
 			'gh':'ghost',
 			'po':'possessor',
 			'ph':'Physics',
-			'no':'Norht'}
+			'no':'Norht',
+			'ba':'bakery'}
 
 wolf_or_human = {'vi':'human',
 				'pr':'human',
@@ -82,11 +84,12 @@ wolf_or_human = {'vi':'human',
 				'gh':'the third',
 				'po':'human',
 				'ph':'human',
-				'no':'the forth'}
+				'no':'human',
+				'ba':'human'}
 
-job_keys = ('vi','pr','gu','ps','pa','wi','wa','ma','gh','po','no','ph')
-fix_job = ('pr','gu','ps','pa','wi','ma','gh','po','no','ph')
-non_night_job_f = ('vi','gu','ps','pa','wi','ma','gh','po','no','ph')
+job_keys = ('vi','pr','gu','ps','pa','wi','wa','ma','gh','po','no','ph','ba')
+fix_job = ('pr','gu','ps','pa','wi','ma','gh','po','no','ph','ba')
+non_night_job_f = ('vi','gu','ps','pa','wi','ma','gh','po','no','ph','ba')
 non_night_job = ('vi','pa','wi','ma','gh')
 
 # メインクラス
@@ -110,6 +113,8 @@ class Warewolf:
 		# 不審リスト
 		self.winner = []
 		# 勝利者リスト
+		self.burn_list = []
+		# 焼却用リスト
 		self.player_dict = {}
 		# name:job
 		self.job_nums = {'human':0,'warewolf':0,'the third':0,'the forth':0}
@@ -120,6 +125,7 @@ class Warewolf:
 		self.pet_flag = False
 		self.poss_player_flag = False
 		self.ghost_player_flag = False
+		self.bakery_player_flag = False
 		# 特殊勝利ジョブ用フラグ
 		self.north_player_flag = False
 		self.north_fire_flag = False
@@ -140,6 +146,14 @@ class Warewolf:
 			config['jobs'][job_code[data]])
 			if config['jobs'][job_code[data]] == 'Enable':
 				use_jobs.append(data)
+				if data == 'po':
+					self.poss_player_flag = True
+				elif data == 'gh':
+					self.ghost_player_flag = True
+				elif data == 'ba':
+					self.bakery_player_flag = True
+				elif data in ('no','ph'):
+					self.north_player_flag = True
 		print(" です。")
 		print("\n 役職の設定を変えます。\n")
 		for key in job_keys:
@@ -170,6 +184,10 @@ class Warewolf:
 							self.ghost_player_flag = True
 							self.change_file(config,'config','jobs',job_code[temp_code],'Enable')
 							use_jobs.append(temp_code)
+						elif temp_code == 'ba':
+							self.bakery_player_flag = True
+							self.change_file(config,'config','jobs',job_code[temp_code],'Enable')
+							use_jobs.append(temp_code)
 						elif temp_code in ('no','ph'):
 							self.north_player_flag = True
 							self.change_file(config,'config','jobs',job_code['no'],'Enable')
@@ -196,15 +214,19 @@ class Warewolf:
 						use_jobs.remove(temp_code)
 						use_jobs.remove(temp_code)
 					elif temp_code == 'po':
-						self.poss_player_flag = True
+						self.poss_player_flag = False
 						self.change_file(config,'config','jobs',job_code[temp_code],'Disable')
 						use_jobs.remove(temp_code)
 					elif temp_code == 'gh':
-						self.ghost_player_flag = True
+						self.ghost_player_flag = False
 						self.change_file(config,'config','jobs',job_code[temp_code],'Disable')
 						use_jobs.remove(temp_code)
+					elif temp_code == 'ba':
+						self.bakery_player_flag = False
+						self.change_file(config,'config','jobs',job_code[temp_code],'Enable')
+						use_jobs.append(temp_code)
 					elif temp_code in ('no','ph'):
-						self.north_player_flag = True
+						self.north_player_flag = False
 						self.change_file(config,'config','jobs',job_code['no'],'DisableDisable')
 						use_jobs.remove('no')
 						self.change_file(config,'config','jobs',job_code['ph'],'Disable')
@@ -265,10 +287,8 @@ class Warewolf:
 			self.change_file(player_data[player_name[x]],player_name[x],'Parson_data'\
 			,'job',self.player_dict[player_name[x]])
 			job_num.remove(self.player_dict[player_name[x]])
-			if self.player_dict[player_name[x]] == 'no':
-				self.north_player = player_name[x]
-			if self.player_dict[player_name[x]] == 'ph':
-				self.ph_player = player_name[x]
+			if self.player_dict[player_name[x]] == 'ba':
+				self.bakery_player = player_name[x]
 			if self.player_dict[player_name[x]] == 'gh':
 				self.ghost_player = player_name[x]
 		mode_flag = input(" 初夜での殺害を有効にしますか？ (Y/N) :")
@@ -312,11 +332,6 @@ class Warewolf:
 			self.night_part(player_data,player_name[num],player_name,config,count)
 			temp = input(" 次へ")
 			os.system('cls')
-		if len(self.killing_list) != 0:
-			for name in self.kill_list:
-				del self.player_dict[name]
-				del player_data[name]
-				player_name.remove(name)
 		loop_flag = True
 		while loop_flag:
 			loop_flag = self.end_check(player_data)
@@ -336,15 +351,12 @@ class Warewolf:
 				time.sleep(1)
 				os.system('cls')
 			self.judge_part(player_data,self.player_dict,player_name,count)
-			for name in self.dead_list:
-				del self.player_dict[name]
-				del player_data[name]
-				player_name.remove(name)
+			input(" 次へ")
 			loop_flag = self.end_check(player_data)
 			count += 1
+			os.system('cls')
 			if loop_flag:
 				for num in range(len(self.player_dict)):
-					os.system('cls')
 					self.check_player(player_name[num])
 					if player_name[num] in self.dead_list:
 						yes_or_no = input(" 全ての人の役職を見ますか？(Y/N)>")
@@ -361,13 +373,8 @@ class Warewolf:
 								yes_or_no = input(" もう一度入力してください:")
 					else:
 						self.night_part(player_data,player_name[num],player_name,config,count)
-					temp = input(" 次へ")
-			for name in self.kill_list:
-				del self.player_dict[name]
-				del player_data[name]
-				player_name.remove(name)
-			self.killing_list.clear()
-			loop_flag = self.end_check(player_data)
+					input(" 次へ")
+					os.system('cls')
 		print(" 勝者は",end='')
 		if len(self.winner) == 0:
 			print(" いませんでした。")
@@ -487,7 +494,6 @@ class Warewolf:
 					check = False
 				else:
 					kill_player = input(" もう一度入力してください>")
-			print(self.killing_list)
 		else:
 			self.doubt_part(data_list,name,names)
 
@@ -576,16 +582,10 @@ class Warewolf:
 				self.possessor_part()
 			elif data_list[name]['Parson_data']['job'] == 'no':
 				self.north_part(data_list,name,names)
-
-	# 夜明け時表示項目メソッド
-	def noon_part(self,config,data_list,loop_flag,count):
-		print(" 恐怖の第{}夜が明けました。".format(count))
-		if config['mode'].getboolean('wolf_flag'):
-			self.kill_check(data_list,count)
-		else:
-			print(" 昨夜の被害者はいませんでした。")
-		if loop_flag:
-			self.doubt_check()
+			elif data_list[name]['Parson_data']['job'] == 'ph':
+				self.physics_part(data_list,name,names)
+			elif data_list[name]['Parson_data']['job'] == 'ba':
+				self.bakery_part(data_list,name,names)
 
 	# 人狼殺害判定メソッド
 	def kill_check(self,data_list,count):
@@ -616,6 +616,16 @@ class Warewolf:
 				self.change_file(data_list[temp_name[0]],temp_name[0],'Parson_data','unsafe_count',str(count))
 		else:
 			print("Killing_list is blank.")
+
+	# 夜明け時表示項目メソッド
+	def noon_part(self,config,data_list,loop_flag,count):
+		print(" 恐怖の第{}夜が明けました。".format(count))
+		if config['mode'].getboolean('wolf_flag') or count < 1:
+			self.kill_check(data_list,count)
+		else:
+			print(" 昨夜の被害者はいませんでした。")
+		if loop_flag:
+			self.doubt_check()
 
 	# 不審者判定メソッド
 	def doubt_check(self):
@@ -652,13 +662,13 @@ class Warewolf:
 				type_name = input(" 署名をお願いします")
 				while type_name != name:
 					type_name = input(" 自身の名前を入力してください")
-			elif fire.uppre() == 'N':
+			elif fire.upper() == 'N':
 				self.doubt_part(data_list,name,names)
 			else:
 				print(" 該当するものがありません。再度入力してください")
 
 	# シノセン行動メソッド
-	def physics_part(self):
+	def physics_part(self,data_list,name,names):
 		if not self.pet_fire_flag:
 			fire = input(" ペットボトルロケットを発射できます。発射しますか？(Y/N)")
 			if fire.upper() == 'Y':
@@ -668,19 +678,30 @@ class Warewolf:
 				type_name = input(" 署名をお願いします")
 				while type_name != name:
 					type_name = input(" 自身の名前を入力してください")
-			elif fire.uppre() == 'N':
+			elif fire.upper() == 'N':
 				self.doubt_part(data_list,name,names)
 			else:
 				print(" 該当するものがありません。再度入力してください")
 
 	# パン屋行動メソッド
-	def bakery_part(self):
-		pass
+	def bakery_part(self,data_list,name,names):
+		loop = True
+		while loop:
+			if True:
+				list_name = self.print_player_list(data_list,name,names)
+				burn_name = input(" 誰を焼き殺しますか？>")
+				check = True
+				while(check):
+					if burn_name in list_name:
+						self.burn_list.appened(burn_name)
+						check = False
+					else:
+						burn_name = input(" もう一度入力してください>")
+				loop = False
 
 	# 処刑者決定メソッド
 	def judge_part(self,player_data,player_dict,names,count):
 		loops = True
-		self.deth_list.clear()
 		while loops:
 			for name in names:
 				os.system('cls')
@@ -700,16 +721,16 @@ class Warewolf:
 							yes_or_no = input(" Type agein!:")
 				else:
 					list_name = self.print_player_list(player_data,name,names)
-					judge_name = input(" Who will be executed?>")
+					judge_name = input(" 誰を処刑しますか？>")
 					loop = False
 					if not judge_name in list_name:
 						loop = True
 					while(loop):
-						judge_name = input(" Type agein!>")
+						judge_name = input(" 再度入力してください>")
 						if judge_name in list_name:
 							loop = False
 					self.deth_list.append(judge_name)
-				input(" Next")
+				input(" 次へ")
 			deth_dict = collections.Counter(self.deth_list)
 			if len(deth_dict) == 1:
 				self.dead_list.append(self.deth_list[0])
@@ -721,10 +742,10 @@ class Warewolf:
 				temp_num = 0
 				for name,x in deth_dict.most_common(len(self.deth_list)):
 					if temp_num == x:
-						print(" The number of votes was the same.\n Voted again.")
+						print(" 投票数が同じでした。\n もう一度投票を行います。")
 						loops = True
 					elif temp_num > x:
-						print(" It is {} who was executed.".format(temp_name))
+						print(" 処刑されたのは{}です。".format(temp_name))
 						self.dead_list.append(temp_name)
 						self.job_nums[wolf_or_human[player_data[temp_name]['Parson_data']['job']]] -= 1
 						self.change_file(player_data[temp_name],temp_name,'Parson_data','safe','Disable')
@@ -734,88 +755,67 @@ class Warewolf:
 					else:
 						temp_num = x
 						temp_name = name
+		os.system('cls')
+
+	# 死亡者削除メソッド
+	def kill_and_dead(self,kill_or_dead):
+		if kill_or_dead == 'kill':
+			for name in self.kill_list:
+				del self.player_dict[name]
+				del player_data[name]
+				player_name.remove(name)
+		if kill_or_dead == 'dead':
+			for name in self.dead_list:
+				del self.player_dict[name]
+				del player_data[name]
+				player_name.remove(name)
+		if kill_or_dead == 'burn':
+			print("{}さんがパン屋に焼き殺されました。".format(self.burn_list[0]))
+			for name in self.burn_list:
+				del self.player_dict[name]
+				del player_data[name]
+				player_name.remove(name)
+			self.burn_list.clear
 
 	# 終了判定メソッド
 	def end_check(self,data_list):
+		flag = True
 		if self.north_player_flag:
+			if self.atom_flag and self.pet_flag:
+				print(" 核ミサイルが村に放たれました。\n しかし、何者かの手によって発射されたペットボトルロケットによって村は守られました。")
+				print(" {}が自分の放った核ミサイルのせいで死亡しました。".format(self.north_player))
+				self.change_file(data_list[self.north_player],self.north_player,'Parson_data','safe','Disable')
+				self.dead_list.append(self.north_player)
+				flag = True
+			elif self.atom_flag and not self.pet_flag:
+				print(" 核ミサイルが村に放たれました。\n 村は崩壊してしまいました。")
+				flag = False
+		self.kill_and_dead(kill_or_dead = 'dead')
+		self.deth_list.clear()
+		self.kill_and_dead(kill_or_dead = 'kill')
+		if self.job_nums['warewolf'] >= self.job_nums['human']:
 			if self.ghost_player_flag:
-				if self.atom_flag and self.pet_flag:
-					print(" A nuclear missile was fired toward the village.\n However, it was stopped by the PET bottle rocket.")
-					print(" {} died due to the missile himself launched".format(self.north_player))
-					self.change_file(data_list[self.north_player],self.north_player,'Parson_data','safe','Disable')
-					self.dead_list.append(self.north_player)
-					return True
-				elif self.atom_flag and not self.pet_flag:
-					print(" A nuclear missile was fired toward the village.\n The village has been destroyed.")
-					return False
-				elif self.job_nums['warewolf'] == self.job_nums['human']:
-					if self.job_nums['The third'] > 1:
-						self.winner = self.ghost_player
-						return False
-					else:
-						self.winner = [name for name in self.player_dict if wolf_or_human[self.player_dict[name]] == 'warewolf']
-						if self.poss_player_flag and self.dead_poss in self.winner and not self.poss_player_name in self.winner:
-							self.winner.appened(self.poss_player_name)
-						return False
-				elif self.job_nums['warewolf'] == 0:
-					self.winner = [name for name in self.player_dict if wolf_or_human[self.player_dict[name]] == 'human']
-					if self.poss_player_flag and self.dead_poss in self.winner and not self.poss_player_name in self.winner:
-						self.winner.appened(self.poss_player_name)
-					return False
-				else:
-					return True
+				self.winner = self.ghost_player
 			else:
-				if self.atom_flag and self.pet_flag:
-					print(" A nuclear missile was fired toward the village.\n However, it was stopped by the PET bottle rocket.")
-					print(" {} died due to the missile himself launched".format(self.north_player))
-					self.change_file(data_list[self.north_player],self.north_player,'Parson_data','safe','Disable')
-					self.dead_list.append(self.north_player)
-					return True
-				elif self.atom_flag and not self.pet_flag:
-					print(" A nuclear missile was fired toward the village.\n The village has been destroyed.")
-					return False
-				elif self.job_nums['warewolf'] == self.job_nums['human']:
-					self.winner = [name for name in self.player_dict if wolf_or_human[self.player_dict[name]] == 'warewolf']
-					if self.poss_player_flag and self.dead_poss in self.winner and not self.poss_player_name in self.winner:
-						self.winner.appened(self.poss_player_name)
-					return False
-				elif self.job_nums['warewolf'] == 0:
-					self.winner = [name for name in self.player_dict if wolf_or_human[self.player_dict[name]] == 'human']
-					if self.poss_player_flag and self.dead_poss in self.winner and not self.poss_player_name in self.winner:
-						self.winner.appened(self.poss_player_name)
-					return False
-				else:
-					return True
-		elif self.ghost_player_flag:
-			if self.job_nums['warewolf'] == self.job_nums['human']:
-				if self.job_nums['The third'] > 1:
-					self.winner = self.ghost_player
-					return False
-				else:
-					self.winner = [name for name in self.player_dict if wolf_or_human[self.player_dict[name]] == 'warewolf']
-					if self.poss_player_flag and self.dead_poss in self.winner and not self.poss_player_name in self.winner:
-						self.winner.appened(self.poss_player_name)
-					return Fasle
-			elif self.job_nums['warewolf'] == 0:
-				self.winner = [name for name in self.player_dict if wolf_or_human[self.player_dict[name]] == 'human']
-				if self.poss_player_flag and self.dead_poss in self.winner and not self.poss_player_name in self.winner:
-					self.winner.appened(self.poss_player_name)
-				return False
-			else:
-				return True
-		else:
-			if self.job_nums['warewolf'] >= self.job_nums['human']:
 				self.winner = [name for name in self.player_dict if wolf_or_human[self.player_dict[name]] == 'warewolf']
 				if self.poss_player_flag and self.dead_poss in self.winner and not self.poss_player_name in self.winner:
 					self.winner.appened(self.poss_player_name)
-				return False
-			elif self.job_nums['warewolf'] == 0:
+			flag = False
+		elif self.job_nums['warewolf'] == 0:
+			if self.ghost_player_flag:
+				self.winner = self.ghost_player
+			else:
 				self.winner = [name for name in self.player_dict if wolf_or_human[self.player_dict[name]] == 'human']
 				if self.poss_player_flag and self.dead_poss in self.winner and not self.poss_player_name in self.winner:
 					self.winner.appened(self.poss_player_name)
-				return False
-			else:
-				return True
+			flag = False
+		if self.bakery_player_flag:
+			self.kill_and_dead(kill_or_dead = 'burn')
+			if self.bakery_player in player_dict:
+				if len(player_dict) == 1:
+					self.winner.append(self.bakery_player)
+					return False
+		return flag
 
 # プレイヤー作成関数
 def make_player_file(name,village_hash):
