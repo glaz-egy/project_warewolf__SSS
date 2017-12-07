@@ -500,21 +500,12 @@ class Warewolf:
 
 	# 守護者行動メソッド
 	def guardian_part(self):
-		yes_or_no = input(" Do you want to protect someone?(Y/N)>")
-		loop = True
-		while loop:
-			if yes_or_no.upper == 'Y':
-				list_name = self.print_player_list(player_data,name,names)
-				self.protect = input(" Who protect?>")
-				while not self.protect in list_name:
-					self.protect = input(" Type agein!:")
-				self.cont_flag = True
-				loop = False
-			elif yes_or_no.upper() == 'N':
-				loop = False
-				return
-			else:
-				yes_or_no = input(" Type agein!:")
+		self.cont_flag = True
+		list_name = self.print_player_list(player_data,name,names)
+		protect_name = input(" 誰を守護しますか？>")
+		while not self.protect in list_name:
+			if protect_name == self.protect:
+				self.protect = input(" 再度入力してください:")
 
 	# 霊能者行動メソッド
 	def psychic_part(self,player_data,name,names,count):
@@ -598,14 +589,16 @@ class Warewolf:
 		temp_name = []
 		temp_num = []
 		if len(kill_dict) == 1:
-			print(" {}さんが無惨な姿で発見されました。".format(self.killing_list[0]))
-			temp_kill = self.killing_list[0]
-			self.kill_list.append(temp_kill)
-			self.job_nums[wolf_or_human[data_list[self.killing_list[0]]['Parson_data']['job']]] -= 1
-			self.change_file(data_list[self.killing_list[0]],self.killing_list[0]\
-			,'Parson_data','safe','Disable')
-			self.change_file(data_list[self.killing_list[0]],self.killing_list[0]\
-			,'Parson_data','unsafe_count',str(count))
+			if self.killing_list[0] != self.protect:
+				print(" {}さんが無惨な姿で発見されました。".format(self.killing_list[0]))
+				self.kill_list.append(self.killing_list[0])
+				self.job_nums[wolf_or_human[data_list[self.killing_list[0]]['Parson_data']['job']]] -= 1
+				self.change_file(data_list[self.killing_list[0]],self.killing_list[0]\
+				,'Parson_data','safe','Disable')
+				self.change_file(data_list[self.killing_list[0]],self.killing_list[0]\
+				,'Parson_data','unsafe_count',str(count))
+			else:
+				print(" 昨夜の被害者はいませんでした。")
 		elif len(kill_dict) < 1:
 			for name,x in kill_dict.most_common(2):
 				temp_num.append(x)
@@ -613,11 +606,14 @@ class Warewolf:
 			if temp_num[0] == temp_num[1]:
 				print(" 昨夜の被害者はいませんでした。")
 			else:
-				print(" {}さんが無惨な姿で発見されました。".format(temp_name[0]))
-				self.kill_list.append(temp_name[0])
-				self.job_nums[wolf_or_human[data_list[temp_name[0]]['Parson_data']['job']]] -= 1
-				self.change_file(data_list[temp_name[0]],temp_name[0],'Parson_data','safe','Disable')
-				self.change_file(data_list[temp_name[0]],temp_name[0],'Parson_data','unsafe_count',str(count))
+				if self.killing_list[0] != self.protect:
+					print(" {}さんが無惨な姿で発見されました。".format(temp_name[0]))
+					self.kill_list.append(temp_name[0])
+					self.job_nums[wolf_or_human[data_list[temp_name[0]]['Parson_data']['job']]] -= 1
+					self.change_file(data_list[temp_name[0]],temp_name[0],'Parson_data','safe','Disable')
+					self.change_file(data_list[temp_name[0]],temp_name[0],'Parson_data','unsafe_count',str(count))
+				else:
+					print(" 昨夜の被害者はいませんでした。")
 		else:
 			print("Killing_list is blank.")
 		self.killing_list.clear()
