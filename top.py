@@ -27,7 +27,8 @@ default_config['jobs'] = {'Villager':'Enable',
 						'Ghost':'Disable',
 						'Possessor':'Disable',
 						'Physics':'Disable',
-						'Norht':'Disable'}
+						'Norht':'Disable',
+						'bakery':'Disable'}
 default_config['mode'] = {'Game_mode':'Nomal',
 						'wolf_flag':'False',
 						'prophet_flag':'False'}
@@ -43,8 +44,8 @@ default_config['num_of_job'] = {'Player':'None',
 								'Ghost':'None',
 								'Possessor':'None',
 								'Physics':'None',
-								'Norht':'None'}
-
+								'Norht':'None',
+								'bakery':'Disable'}
 job_jp =  {'vi':'村人',
 			'pr':'占い師',
 			'gu':'守護者',
@@ -113,7 +114,7 @@ class Warewolf:
 		# 不審リスト
 		self.winner = []
 		# 勝利者リスト
-		self.burn_list = []
+		self.burn_player = ''
 		# 焼却用リスト
 		self.player_dict = {}
 		# name:job
@@ -458,7 +459,7 @@ class Warewolf:
 					check = True
 					while(check):
 						if player_check_job in list_name:
-							print(" {0} job is {1}.".format(player_check_job\
+							print(" {0}さんは{1}です。".format(player_check_job\
 							,wolf_or_human[self.player_dict[player_check_job]]))
 							if self.player_dict[player_check_job] == 'gh':
 								self.job_nums[wolf_or_human[player_data[player_check_job]['Parson_data']['job']]] -= 1
@@ -517,27 +518,30 @@ class Warewolf:
 
 	# 霊能者行動メソッド
 	def psychic_part(self,player_data,name,names,count):
-		#yes_or_no = input(" Do you see someone's work?(Y/N)>")
 		loop = True
-		while loop:
-			if count == 2:
-				list_name = self.print_player_list(player_data,name,names)
-				job_check = input(" Whose job would you like to see?>")
-				check = True
-				while(check):
-					if player_check_job in list_name:
-						print(" {0} job is {1}.".format(player_check_job\
-						,wolf_or_human[self.player_dict[player_check_job]]))
-						check = False
-					else:
-						player_check_job = input(" Type agein!>")
-				loop = False
-			else:
-				self.doubt_part(player_data,name,names)
-				loop = False
-				return
-			#else:
-				#yes_or_no = input(" Type agein!:")
+		if count <= 2:
+			job_check = input(" 前日無くなった人の役職を確認しますか（Y/N）？>")
+			check = True
+			while check:
+				if job_check.upper() == 'Y':
+					print("前日死亡者:{}".format(self.dead_list[-1]))
+					while loop:
+						in_name = input(" 視る人の名前を入力してください。")
+						if in_name == self.dead_list[-1]:
+							loop = False
+					print(" {0}は{1}です。".format(player_check_job\
+					,wolf_or_human[self.player_dict[player_check_job]]))
+					check = False
+				elif job_check.upper() == 'N':
+					self.doubt_part(player_data,name,names)
+					check = False
+				else:
+					in_name = input(" 再度入力してください:")
+			loop = False
+		else:
+			self.doubt_part(player_data,name,names)
+			loop = False
+			return
 
 	# 憑依者行動メソッド
 	def possessor_part(self,player_data,name,names,count):
@@ -547,9 +551,9 @@ class Warewolf:
 			if count == 2:
 				self.poss_player_name = name
 				list_name = self.print_player_list(player_data,name,names)
-				self.dead_poss = input(" Who possession?>")
+				self.dead_poss = input(" 誰に取り憑きますか？>")
 				while not self.dead_poss in list_name:
-					self.dead_poss = input(" Type agein!:")
+					self.dead_poss = input(" 再度入力してください:")
 				loop = False
 			else:
 				self.doubt_part(player_data,name,names)
@@ -616,6 +620,7 @@ class Warewolf:
 				self.change_file(data_list[temp_name[0]],temp_name[0],'Parson_data','unsafe_count',str(count))
 		else:
 			print("Killing_list is blank.")
+		self.killing_list.clear()
 
 	# 夜明け時表示項目メソッド
 	def noon_part(self,config,data_list,loop_flag,count):
@@ -634,16 +639,23 @@ class Warewolf:
 		fl = True
 		doubt_dict = collections.Counter(self.doubt_list)
 		if len(doubt_dict) == 1:
-			print(" 一番疑われているのは{}さんです。".format(self.doubt_list[0]))
-			fl = False
-			return
+			if self.doubt_list[0] in self.player_dict:
+				print(" 一番疑われているのは{}さんです。".format(self.doubt_list[0]))
+				fl = False
+				return
+			else:
+				print(" 現在疑われている人はいません")
+				return
 		for name,x in doubt_dict.most_common(2):
 			temp_num.append(x)
 			temp_name.append(name)
 		if temp_num[0] == temp_num[1]:
 			print(" 現在疑われている人はいません")
 		else:
-			print(" 一番疑われているのは{}さんです。".format(temp_name[0]))
+			if temp_name[0] in self.player_dict:
+				print(" 一番疑われているのは{}さんです。".format(temp_name[0]))
+			else:
+				print(" 現在疑われている人はいません")
 		self.doubt_list.clear()
 
 	# 妖魔出力判定メソッド
@@ -693,7 +705,7 @@ class Warewolf:
 				check = True
 				while(check):
 					if burn_name in list_name:
-						self.burn_list.appened(burn_name)
+						self.burn_player = burn_name
 						check = False
 					else:
 						burn_name = input(" もう一度入力してください>")
@@ -707,7 +719,7 @@ class Warewolf:
 				os.system('cls')
 				self.check_player(name)
 				if name in self.kill_list:
-					yes_or_no = input(" Do you want to see all job?(Y/N)>")
+					yes_or_no = input(" 全ての人の役職を確認しますか？(Y/N)>")
 					loop = True
 					while loop:
 						if yes_or_no.upper() == 'Y':
@@ -718,7 +730,7 @@ class Warewolf:
 						elif yes_or_no.upper() == 'N':
 							loop = False
 						else:
-							yes_or_no = input(" Type agein!:")
+							yes_or_no = input(" 再度入力してください:")
 				else:
 					list_name = self.print_player_list(player_data,name,names)
 					judge_name = input(" 誰を処刑しますか？>")
@@ -731,6 +743,7 @@ class Warewolf:
 							loop = False
 					self.deth_list.append(judge_name)
 				input(" 次へ")
+			os.system('cls')
 			deth_dict = collections.Counter(self.deth_list)
 			if len(deth_dict) == 1:
 				self.dead_list.append(self.deth_list[0])
@@ -761,21 +774,26 @@ class Warewolf:
 	def kill_and_dead(self,kill_or_dead):
 		if kill_or_dead == 'kill':
 			for name in self.kill_list:
-				del self.player_dict[name]
-				del player_data[name]
-				player_name.remove(name)
+				if name in self.player_dict:
+					del self.player_dict[name]
+					del player_data[name]
+					player_name.remove(name)
 		if kill_or_dead == 'dead':
 			for name in self.dead_list:
-				del self.player_dict[name]
-				del player_data[name]
-				player_name.remove(name)
+				if name in self.player_dict:
+					del self.player_dict[name]
+					del player_data[name]
+					player_name.remove(name)
 		if kill_or_dead == 'burn':
-			print("{}さんがパン屋に焼き殺されました。".format(self.burn_list[0]))
-			for name in self.burn_list:
-				del self.player_dict[name]
-				del player_data[name]
-				player_name.remove(name)
-			self.burn_list.clear
+			if self.burn_player != '':
+				print(" {}さんがパン屋に焼き殺されました。".format(self.burn_player))
+				del self.player_dict[self.burn_player]
+				del player_data[self.burn_player]
+				player_name.remove(self.burn_player)
+				self.burn_player = ''
+				return True
+			else:
+				return False
 
 	# 終了判定メソッド
 	def end_check(self,data_list):
@@ -810,11 +828,11 @@ class Warewolf:
 					self.winner.appened(self.poss_player_name)
 			flag = False
 		if self.bakery_player_flag:
-			self.kill_and_dead(kill_or_dead = 'burn')
-			if self.bakery_player in player_dict:
-				if len(player_dict) == 1:
-					self.winner.append(self.bakery_player)
-					return False
+			if self.kill_and_dead(kill_or_dead = 'burn'):
+				if self.bakery_player in self.player_dict:
+					if len(self.player_dict) == 1:
+						self.winner.append(self.bakery_player)
+						return False
 		return flag
 
 # プレイヤー作成関数
